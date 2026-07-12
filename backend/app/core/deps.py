@@ -25,10 +25,13 @@ def get_payment_provider() -> PaymentProvider:
     settings = get_settings()
     if settings.demo_mode:
         return FakePaymentProvider()
-    # Real provider will be added in the next step
-    # from app.services.payment.abacatepay_provider import AbacatePayProvider
-    # return AbacatePayProvider(api_key=settings.abacatepay_api_key)
-    raise RuntimeError("AbacatePayProvider not yet implemented")
+    # Fail-fast is already enforced by Settings._enforce_real_mode_credentials
+    # — if we reach here, ABACATEPAY_API_KEY and ABACATEPAY_WEBHOOK_SECRET are set.
+    from app.services.payment.abacatepay_provider import AbacatePayProvider
+    return AbacatePayProvider(
+        api_key=settings.abacatepay_api_key,
+        webhook_secret=settings.abacatepay_webhook_secret,
+    )
 
 
 @lru_cache(maxsize=1)

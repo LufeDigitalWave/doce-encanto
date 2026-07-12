@@ -122,7 +122,7 @@ class SchedulingSlot(Base):
     end_time: Mapped[time] = mapped_column(Time, nullable=False)
     capacity: Mapped[int] = mapped_column(Integer, nullable=False)
     fulfillment_type: Mapped[FulfillmentType] = mapped_column(
-        Enum(FulfillmentType, name="fulfillment_type"), nullable=False
+        Enum(FulfillmentType, name="fulfillment_type", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
 
 
@@ -143,7 +143,7 @@ class Order(Base):
 
     # Fulfillment -------------------------------------------------------
     fulfillment_type: Mapped[FulfillmentType] = mapped_column(
-        Enum(FulfillmentType, name="order_fulfillment_type"), nullable=False
+        Enum(FulfillmentType, name="order_fulfillment_type", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
     address_json: Mapped[dict[str, Any] | None] = mapped_column(JSONB, nullable=True)
 
@@ -154,15 +154,15 @@ class Order(Base):
 
     # Status -----------------------------------------------------------
     status: Mapped[OrderStatus] = mapped_column(
-        Enum(OrderStatus, name="order_status"),
+        Enum(OrderStatus, name="order_status", values_callable=lambda x: [e.value for e in x]),
         default=OrderStatus.PENDING_PAYMENT,
         nullable=False,
     )
     payment_method: Mapped[PaymentMethod] = mapped_column(
-        Enum(PaymentMethod, name="payment_method"), nullable=False
+        Enum(PaymentMethod, name="payment_method", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
     payment_status: Mapped[PaymentStatus] = mapped_column(
-        Enum(PaymentStatus, name="payment_status"),
+        Enum(PaymentStatus, name="payment_status", values_callable=lambda x: [e.value for e in x]),
         default=PaymentStatus.PENDING,
         nullable=False,
     )
@@ -241,13 +241,13 @@ class Notification(Base):
         ForeignKey("orders.id", ondelete="CASCADE"), nullable=False
     )
     channel: Mapped[NotificationChannel] = mapped_column(
-        Enum(NotificationChannel, name="notification_channel"), nullable=False
+        Enum(NotificationChannel, name="notification_channel", values_callable=lambda x: [e.value for e in x]), nullable=False
     )
     recipient: Mapped[str] = mapped_column(String(180), nullable=False)
     template_key: Mapped[str] = mapped_column(String(80), nullable=False)
     rendered_body: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[NotificationStatus] = mapped_column(
-        Enum(NotificationStatus, name="notification_status"),
+        Enum(NotificationStatus, name="notification_status", values_callable=lambda x: [e.value for e in x]),
         default=NotificationStatus.QUEUED,
         nullable=False,
     )
