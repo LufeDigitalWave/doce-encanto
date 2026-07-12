@@ -39,7 +39,7 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8001:8000"
+      - "8010:8000"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.doce-encanto-api.rule=Host(`doceencanto.vozativa.com.br`) && PathPrefix(`/api`)"
@@ -58,7 +58,7 @@ services:
     environment:
       VITE_API_BASE_URL: http://localhost:8001
     ports:
-      - "5174:80"
+      - "5180:80"
     labels:
       - "traefik.enable=true"
       - "traefik.http.routers.doce-encanto-web.rule=Host(`doceencanto.vozativa.com.br`) && !PathPrefix(`/api`)"
