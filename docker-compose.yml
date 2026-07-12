@@ -39,20 +39,32 @@ services:
       db:
         condition: service_healthy
     ports:
-      - "8000:8000"
+      - "8001:8000"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.doce-encanto-api.rule=Host(`doceencanto.vozativa.com.br`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.doce-encanto-api.entrypoints=websecure"
+      - "traefik.http.routers.doce-encanto-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.doce-encanto-api.loadbalancer.server.port=8000"
     command: >
       sh -c "alembic upgrade head &&
              python -m app.seeds.run &&
-             uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+             uvicorn app.main:app --host 0.0.0.0 --port 8000"
 
   web:
     build:
       context: ./frontend
       dockerfile: Dockerfile
     environment:
-      VITE_API_BASE_URL: http://localhost:8000
+      VITE_API_BASE_URL: http://localhost:8001
     ports:
-      - "5173:80"
+      - "5174:80"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.doce-encanto-web.rule=Host(`doceencanto.vozativa.com.br`) && !PathPrefix(`/api`)"
+      - "traefik.http.routers.doce-encanto-web.entrypoints=websecure"
+      - "traefik.http.routers.doce-encanto-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.doce-encanto-web.loadbalancer.server.port=80"
     depends_on:
       - api
 
