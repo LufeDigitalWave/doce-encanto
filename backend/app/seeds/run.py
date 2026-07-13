@@ -24,7 +24,7 @@ PRODUCTS: list[dict] = [
         "slug": "brigadeiro-gourmet-cx-12",
         "description": "Caixa com 12 brigadeiros gourmet no sabor tradicional, com granulado belga.",
         "price_cents": 3800,
-        "image_url": "/img/brigadeiro.svg",
+        "image_url": "/products/brigadeiro-gourmet.jpg",
         "sort_order": 10,
     },
     {
@@ -32,7 +32,7 @@ PRODUCTS: list[dict] = [
         "slug": "bolo-pote-ninho-nutella",
         "description": "Bolo de pote com camadas de creme de Ninho e Nutella. 350ml.",
         "price_cents": 2200,
-        "image_url": "/img/bolo-pote.svg",
+        "image_url": "/products/bolo-pote-ninho.jpg",
         "sort_order": 20,
     },
     {
@@ -40,7 +40,7 @@ PRODUCTS: list[dict] = [
         "slug": "torta-red-velvet",
         "description": "Torta Red Velvet 1.2kg com cream cheese frosting. Serve 10–12 fatias.",
         "price_cents": 18900,
-        "image_url": "/img/torta-red-velvet.svg",
+        "image_url": "/products/torta-red-velvet.jpg",
         "sort_order": 30,
     },
     {
@@ -48,7 +48,7 @@ PRODUCTS: list[dict] = [
         "slug": "cento-brigadeiro",
         "description": "100 brigadeiros gourmet sortidos. Pronto pra sua festa.",
         "price_cents": 24900,
-        "image_url": "/img/cento-brigadeiro.svg",
+        "image_url": "/products/cento-brigadeiro.jpg",
         "sort_order": 40,
     },
     {
@@ -56,7 +56,7 @@ PRODUCTS: list[dict] = [
         "slug": "ovo-colher-350g",
         "description": "Ovo de colher 350g com recheio de Ninho c/ Nutella.",
         "price_cents": 7900,
-        "image_url": "/img/ovo-colher.svg",
+        "image_url": "/products/ovo-colher.jpg",
         "sort_order": 50,
     },
     {
@@ -64,7 +64,7 @@ PRODUCTS: list[dict] = [
         "slug": "palha-italiana",
         "description": "Palha Italiana clássica, corte 3x3cm, 500g.",
         "price_cents": 4500,
-        "image_url": "/img/palha-italiana.svg",
+        "image_url": "/products/palha-italiana.jpg",
         "sort_order": 60,
     },
     {
@@ -72,7 +72,7 @@ PRODUCTS: list[dict] = [
         "slug": "bolo-vulcao",
         "description": "Bolo vulcão de chocolate com recheio cremoso que escorre. 1.5kg.",
         "price_cents": 16500,
-        "image_url": "/img/bolo-vulcao.svg",
+        "image_url": "/products/bolo-vulcao.jpg",
         "sort_order": 70,
     },
     {
@@ -80,7 +80,7 @@ PRODUCTS: list[dict] = [
         "slug": "kit-festa-50-doces",
         "description": "50 doces sortidos (brigadeiro, beijinho, cajuzinho, olho de sogra).",
         "price_cents": 18900,
-        "image_url": "/img/kit-festa.svg",
+        "image_url": "/products/kit-festa.jpg",
         "sort_order": 80,
     },
     {
@@ -88,7 +88,7 @@ PRODUCTS: list[dict] = [
         "slug": "bem-casadinho-un",
         "description": "Bem casadinho tradicional, unidade de 30g.",
         "price_cents": 350,
-        "image_url": "/img/bem-casadinho.svg",
+        "image_url": "/products/bem-casadinho.jpg",
         "sort_order": 90,
     },
     {
@@ -96,7 +96,7 @@ PRODUCTS: list[dict] = [
         "slug": "trufa-chocolate-un",
         "description": "Trufa artesanal de chocolate meio amargo. Unidade.",
         "price_cents": 450,
-        "image_url": "/img/trufa.svg",
+        "image_url": "/products/trufa-chocolate.jpg",
         "sort_order": 100,
     },
 ]
