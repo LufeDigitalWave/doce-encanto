@@ -39,6 +39,9 @@ def get_email_provider() -> NotificationProvider | None:
     settings = get_settings()
     if settings.demo_mode:
         return ConsoleEmailProvider()
+    # Resend is optional — if key is missing, fall back to console
+    if not settings.resend_api_key:
+        return ConsoleEmailProvider()
     from app.services.notification.resend_email import ResendEmailProvider
     return ResendEmailProvider(api_key=settings.resend_api_key, from_address=settings.email_from)
 

@@ -61,10 +61,8 @@ class Settings(BaseSettings):
             missing.append("ABACATEPAY_API_KEY")
         if not self.abacatepay_webhook_secret:
             missing.append("ABACATEPAY_WEBHOOK_SECRET")
-        if not self.resend_api_key:
-            missing.append("RESEND_API_KEY")
-        if not self.email_from:
-            missing.append("EMAIL_FROM")
+        # Resend is optional — if not set, emails fall back to console logs.
+        # Only AbacatePay keys are strictly required for real Pix payments.
         if missing:
             raise RuntimeError(
                 "DEMO_MODE=false requires these env vars to be set: "
