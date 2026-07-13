@@ -55,8 +55,9 @@ export default function StepPayment({ data, onNext, onBack }: Props) {
     setCheckoutUrl(charge.checkout_url || '')
     setDemoMode(charge.demo_mode)
 
-    // If real mode with hosted checkout, redirect to AbacatePay
+    // If real mode with hosted checkout, save order ID and redirect
     if (charge.checkout_url) {
+      sessionStorage.setItem('doce_encanto_last_order_id', String(oid))
       window.location.href = charge.checkout_url
     }
   }

@@ -2,6 +2,7 @@ import { Routes, Route } from 'react-router-dom'
 import Landing from './pages/Landing'
 import Checkout from './pages/Checkout'
 import OrderTracking from './pages/OrderTracking'
+import PaymentDone from './pages/PaymentDone'
 import AdminLogin from './pages/admin/AdminLogin'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AdminOrders from './pages/admin/AdminOrders'
@@ -14,6 +15,7 @@ export default function App() {
     <Routes>
       <Route path="/" element={<Landing />} />
       <Route path="/checkout" element={<Checkout />} />
+      <Route path="/pedido/done" element={<PaymentDone />} />
       <Route path="/pedido/:token" element={<OrderTracking />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
