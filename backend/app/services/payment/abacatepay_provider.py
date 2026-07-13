@@ -78,6 +78,8 @@ class AbacatePayProvider(PaymentProvider):
                 headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
                 timeout=10,
             )
+            if not resp.is_success:
+                _log.error("AbacatePay %s: %s", resp.status_code, resp.text)
             resp.raise_for_status()
             data = resp.json()
 
