@@ -97,8 +97,8 @@ export default function StepScheduling({ data, onNext, onBack }: Props) {
               }`}
             >
               <div>{s.start_time}–{s.end_time}</div>
-              <div className="text-xs mt-1">
-                {s.available ? `${s.remaining} vagas` : 'Lotado'}
+              <div className="text-xs mt-1 text-chocolate-500">
+                {s.available ? `${s.remaining} horário${s.remaining !== 1 ? 's' : ''} disponível` : '⚫ Indisponível'}
               </div>
             </button>
           ))}
