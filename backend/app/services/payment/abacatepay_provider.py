@@ -82,6 +82,31 @@ class AbacatePayProvider(PaymentProvider):
             self._product_cache[external_id] = product_id
             return product_id
 
+    async def _ensure_customer(self, customer: dict) -> str | None:
+        """Create or find a customer on AbacatePay. Returns customer ID or None."""
+        if not customer or not customer.get("email"):
+            return None
+        try:
+            async with httpx.AsyncClient() as client:
+                resp = await client.post(
+                    f"{BASE_URL}/customers/create",
+                    json={
+                        "email": customer.get("email", ""),
+                        "name": customer.get("name", ""),
+                        "cellphone": customer.get("cellphone", ""),
+                        "taxId": customer.get("taxId", customer.get("cpf", "")),
+                    },
+                    headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
+                    timeout=10,
+                )
+                if resp.is_success:
+                    return resp.json().get("data", {}).get("id")
+                _log.warning("Customer create failed: %s", resp.text)
+                return None
+        except Exception as e:
+            _log.warning("Customer create exception: %s", e)
+            return None
+
     async def create_pix_charge(
         self,
         *,
@@ -108,6 +133,9 @@ class AbacatePayProvider(PaymentProvider):
             external_id=order_number,
         )
 
+        # Create or find customer so AbacatePay pre-fills the form
+        customer_id = await self._ensure_customer(customer)
+
         # Create checkout
         payload = {
             "items": [{"id": product_id, "quantity": 1}],
@@ -116,6 +144,8 @@ class AbacatePayProvider(PaymentProvider):
             "completionUrl": f"{settings.public_base_url}/pedido/done",
             "returnUrl": f"{settings.public_base_url}/checkout",
         }
+        if customer_id:
+            payload["customerId"] = customer_id
 
         async with httpx.AsyncClient() as client:
             resp = await client.post(

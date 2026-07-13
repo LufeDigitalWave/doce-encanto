@@ -44,6 +44,7 @@ async def create_pix_charge(
             "name": order.customer_name,
             "email": order.customer_email,
             "cellphone": order.customer_phone,
+            "taxId": order.customer_cpf or "",
         },
         order_number=order.order_number,
     )
