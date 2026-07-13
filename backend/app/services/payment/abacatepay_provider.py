@@ -23,7 +23,7 @@ from app.services.payment.base import PaymentProvider, PixCharge
 
 _log = logging.getLogger("payment.abacatepay")
 
-BASE_URL = "https://api.abacatepay.com/v1"
+BASE_URL = "https://api.abacatepay.com/v2"
 HEADERS = {
     "User-Agent": "DoceEncanto/0.1",
     "Content-Type": "application/json",
@@ -61,15 +61,19 @@ class AbacatePayProvider(PaymentProvider):
             PixCharge with qr_code_base64, copy_paste_code, etc.
         """
         payload = {
-            "amount": amount_cents,
-            "expiresIn": ttl_seconds,
-            "description": description,
-            "customer": customer,
+            "data": {
+                "amount": amount_cents,
+                "expiresIn": ttl_seconds,
+                "description": description,
+                "customer": customer if customer else None,
+            }
         }
+        # Remove None values from data
+        payload["data"] = {k: v for k, v in payload["data"].items() if v is not None}
 
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{BASE_URL}/pixQrCode/create",
+                f"{BASE_URL}/transparents/create",
                 json=payload,
                 headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
                 timeout=10,
@@ -107,7 +111,7 @@ class AbacatePayProvider(PaymentProvider):
         """
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{BASE_URL}/pixQrCode/check",
+                f"{BASE_URL}/transparents/check",
                 params={"id": provider_charge_id},
                 headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
                 timeout=10,
