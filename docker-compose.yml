@@ -7,8 +7,6 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: doce_encanto
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
     healthcheck:
@@ -42,10 +40,13 @@ services:
       - "8010:8000"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.doce-encanto-api.rule=Host(`doceencanto.vozativa.com.br`) && PathPrefix(`/api`)"
-      - "traefik.http.routers.doce-encanto-api.entrypoints=websecure"
-      - "traefik.http.routers.doce-encanto-api.tls.certresolver=letsencrypt"
-      - "traefik.http.services.doce-encanto-api.loadbalancer.server.port=8000"
+      - "traefik.http.routers.doce-api.rule=Host(`mvpdoce.lufedigitalwave.com.br`) && PathPrefix(`/api`)"
+      - "traefik.http.routers.doce-api.entrypoints=websecure"
+      - "traefik.http.routers.doce-api.tls.certresolver=letsencrypt"
+      - "traefik.http.services.doce-api.loadbalancer.server.port=8000"
+    networks:
+      - default
+      - easypanel
     command: >
       sh -c "alembic upgrade head &&
              python -m app.seeds.run &&
@@ -55,18 +56,23 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile
-    environment:
-      VITE_API_BASE_URL: http://localhost:8001
     ports:
       - "5180:80"
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.doce-encanto-web.rule=Host(`doceencanto.vozativa.com.br`) && !PathPrefix(`/api`)"
-      - "traefik.http.routers.doce-encanto-web.entrypoints=websecure"
-      - "traefik.http.routers.doce-encanto-web.tls.certresolver=letsencrypt"
-      - "traefik.http.services.doce-encanto-web.loadbalancer.server.port=80"
+      - "traefik.http.routers.doce-web.rule=Host(`mvpdoce.lufedigitalwave.com.br`)"
+      - "traefik.http.routers.doce-web.entrypoints=websecure"
+      - "traefik.http.routers.doce-web.tls.certresolver=letsencrypt"
+      - "traefik.http.services.doce-web.loadbalancer.server.port=80"
+    networks:
+      - default
+      - easypanel
     depends_on:
       - api
 
 volumes:
   db_data:
+
+networks:
+  easypanel:
+    external: true
