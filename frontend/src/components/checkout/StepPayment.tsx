@@ -17,6 +17,7 @@ export default function StepPayment({ data, onNext, onBack }: Props) {
   const [orderId, setOrderId] = useState<number | null>(data.orderId)
   const [qrCode, setQrCode] = useState('')
   const [copyPaste, setCopyPaste] = useState('')
+  const [checkoutUrl, setCheckoutUrl] = useState('')
   const [demoMode, setDemoMode] = useState(false)
   const [paymentStatus, setPaymentStatus] = useState<string>('pending')
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null)
@@ -51,7 +52,13 @@ export default function StepPayment({ data, onNext, onBack }: Props) {
     const charge = res.data
     setQrCode(charge.qr_code_base64)
     setCopyPaste(charge.copy_paste_code)
+    setCheckoutUrl(charge.checkout_url || '')
     setDemoMode(charge.demo_mode)
+
+    // If real mode with hosted checkout, redirect to AbacatePay
+    if (charge.checkout_url) {
+      window.location.href = charge.checkout_url
+    }
   }
 
   // 3. Poll payment status

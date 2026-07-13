@@ -158,6 +158,7 @@ class OrderOut(BaseModel):
 class PaymentChargeOut(BaseModel):
     qr_code_base64: str
     copy_paste_code: str
+    checkout_url: str | None = None  # AbacatePay hosted checkout URL
     expires_at: datetime | None = None
     demo_mode: bool
 

@@ -1,10 +1,12 @@
-"""AbacatePay real payment provider.
+"""AbacatePay real payment provider — V2 Checkout API.
 
-Wraps the official SDK (available at https://github.com/AbacatePay/abacatepay-python-sdk)
-but we implement the HTTP calls directly for full control over signature verification and
-error handling. Base URL, endpoints, and authentication follow the official SDK contracts.
+Uses the hosted checkout flow:
+1. Backend creates a product (if not cached) + checkout
+2. Frontend redirects customer to AbacatePay's hosted page
+3. Customer pays Pix there
+4. AbacatePay sends webhook → backend updates order
 
-Docs: https://www.abacatepay.com/llms.txt
+Docs: https://docs.abacatepay.com/pages/payment/create
 SDK: https://github.com/AbacatePay/abacatepay-python-sdk
 """
 
@@ -31,13 +33,54 @@ HEADERS = {
 
 
 class AbacatePayProvider(PaymentProvider):
-    """Production payment provider using AbacatePay's Pix infrastructure."""
+    """Production payment provider using AbacatePay's hosted checkout."""
 
     name = "abacatepay"
 
     def __init__(self, *, api_key: str, webhook_secret: str) -> None:
         self.api_key = api_key
         self.webhook_secret = webhook_secret
+        self._product_cache: dict[str, str] = {}  # external_id -> product_id
+
+    async def _ensure_product(self, *, name: str, price_cents: int, external_id: str) -> str:
+        """Create or retrieve a product on AbacatePay. Returns product ID."""
+        if external_id in self._product_cache:
+            return self._product_cache[external_id]
+
+        async with httpx.AsyncClient() as client:
+            # Try to find existing product
+            resp = await client.get(
+                f"{BASE_URL}/products/list",
+                headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
+                timeout=10,
+            )
+            if resp.is_success:
+                products = resp.json().get("data", [])
+                for p in products:
+                    if p.get("externalId") == external_id:
+                        self._product_cache[external_id] = p["id"]
+                        return p["id"]
+
+            # Create new product
+            resp = await client.post(
+                f"{BASE_URL}/products/create",
+                json={
+                    "externalId": external_id,
+                    "name": name,
+                    "price": price_cents,
+                    "currency": "BRL",
+                    "description": name,
+                },
+                headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
+                timeout=10,
+            )
+            if not resp.is_success:
+                _log.error("Failed to create product: %s %s", resp.status_code, resp.text)
+                resp.raise_for_status()
+
+            product_id = resp.json()["data"]["id"]
+            self._product_cache[external_id] = product_id
+            return product_id
 
     async def create_pix_charge(
         self,
@@ -48,90 +91,89 @@ class AbacatePayProvider(PaymentProvider):
         order_number: str,
         ttl_seconds: int = 900,
     ) -> PixCharge:
-        """Create a Pix charge via POST /pixQrCode/create.
+        """Create a hosted checkout on AbacatePay.
 
-        Args:
-            amount_cents: total in centavos (e.g., 1500 = R$ 15,00)
-            description: invoice description
-            customer: dict with name, email, cellphone
-            order_number: unique identifier for this order (used as txid)
-            ttl_seconds: how long the QR is valid (default 15 min)
-
-        Returns:
-            PixCharge with qr_code_base64, copy_paste_code, etc.
+        Returns a PixCharge where:
+        - qr_code_base64 = "" (QR is on AbacatePay's hosted page)
+        - copy_paste_code = the checkout URL (customer is redirected here)
+        - provider_charge_id = bill_... ID
         """
+        from app.core.config import get_settings
+        settings = get_settings()
+
+        # Ensure product exists
+        product_id = await self._ensure_product(
+            name=description,
+            price_cents=amount_cents,
+            external_id=order_number,
+        )
+
+        # Create checkout
         payload = {
-            "data": {
-                "amount": amount_cents,
-                "expiresIn": ttl_seconds,
-                "description": description,
-                "customer": customer if customer else None,
-            }
+            "items": [{"id": product_id, "quantity": 1}],
+            "methods": ["PIX"],
+            "externalId": order_number,
+            "completionUrl": f"{settings.public_base_url}/pedido/done",
+            "returnUrl": f"{settings.public_base_url}/checkout",
         }
-        # Remove None values from data
-        payload["data"] = {k: v for k, v in payload["data"].items() if v is not None}
 
         async with httpx.AsyncClient() as client:
             resp = await client.post(
-                f"{BASE_URL}/transparents/create",
+                f"{BASE_URL}/checkouts/create",
                 json=payload,
                 headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
                 timeout=10,
             )
             if not resp.is_success:
-                _log.error("AbacatePay %s: %s", resp.status_code, resp.text)
+                _log.error("AbacatePay checkout error %s: %s", resp.status_code, resp.text)
             resp.raise_for_status()
             data = resp.json()
 
-        # Response shape from SDK: {data: {id, brCode, brCodeBase64, status, devMode, ...}}
         result = data.get("data", {})
-        charge_id = result.get("id")
+        charge_id = result.get("id", "")
+        checkout_url = result.get("url", "")
 
         if not charge_id:
             raise RuntimeError(
                 f"AbacatePay response missing 'id': {json.dumps(result)}"
             )
 
-        expires_at = (
-            datetime.fromisoformat(result["expiresAt"].replace("Z", "+00:00"))
-            if "expiresAt" in result
-            else datetime.now(tz=timezone.utc) + timedelta(seconds=ttl_seconds)
-        )
-
         return PixCharge(
-            qr_code_base64=result.get("brCodeBase64", ""),
-            copy_paste_code=result.get("brCode", ""),
+            qr_code_base64="",  # QR is on AbacatePay's hosted page
+            copy_paste_code=checkout_url,  # This IS the checkout URL
             provider_charge_id=charge_id,
-            expires_at=expires_at,
+            expires_at=datetime.now(tz=timezone.utc) + timedelta(seconds=ttl_seconds),
             raw_response=result,
         )
 
     async def check_charge(self, provider_charge_id: str) -> str:
-        """Check charge status via GET /pixQrCode/check?id=<id>.
-
-        Returns one of: PENDING, PAID, EXPIRED, CANCELED, REFUNDED, FAILED.
-        """
+        """Check checkout status. Returns PENDING, PAID, EXPIRED, etc."""
         async with httpx.AsyncClient() as client:
             resp = await client.get(
-                f"{BASE_URL}/transparents/check",
-                params={"id": provider_charge_id},
+                f"{BASE_URL}/checkouts/list",
                 headers={**HEADERS, "Authorization": f"Bearer {self.api_key}"},
                 timeout=10,
             )
-            resp.raise_for_status()
+            if not resp.is_success:
+                return "PENDING"
             data = resp.json()
 
-        result = data.get("data", {})
-        status = result.get("status", "PENDING")
-        return status
+        for checkout in data.get("data", []):
+            if checkout.get("id") == provider_charge_id:
+                status = checkout.get("status", "PENDING")
+                # Map AbacatePay statuses to our internal ones
+                if status == "COMPLETED":
+                    return "PAID"
+                return status
+        return "PENDING"
 
     def verify_webhook_signature(
         self, *, raw_body: bytes, signature_header: str
     ) -> bool:
         """Verify HMAC-SHA256 signature from AbacatePay webhook.
 
-        Header: x-webhook-signature (base64-encoded HMAC)
-        Algorithm: HMAC-SHA256(secret, raw_body)
+        Header: X-Webhook-Signature (base64-encoded HMAC)
+        Algorithm: HMAC-SHA256(webhook_secret, raw_body)
         """
         if not signature_header:
             return False
@@ -149,20 +191,20 @@ class AbacatePayProvider(PaymentProvider):
             return False
 
     def parse_webhook(self, raw_body: bytes) -> dict:
-        """Parse and normalize a webhook payload.
+        """Parse AbacatePay V2 webhook payload.
 
-        AbacatePay sends events like:
+        Format:
         {
-          "id": "evt_...",
-          "event": "transparent.completed" | "transparent.paid" | ...,
+          "id": "log_abc123",
+          "event": "checkout.completed",
+          "apiVersion": 2,
+          "devMode": true,
           "data": {
-            "id": "pix_qr_...",
-            "status": "PAID" | "PENDING" | ...,
+            "id": "bill_...",
+            "status": "COMPLETED",
             ...
           }
         }
-
-        Returns a dict: {event_id, event_type, charge_id, status, _raw}
         """
         payload = json.loads(raw_body or b"{}")
         event_id = payload.get("id", "")
@@ -170,6 +212,10 @@ class AbacatePayProvider(PaymentProvider):
         data = payload.get("data", {})
         charge_id = data.get("id", "")
         status = data.get("status", "PENDING")
+
+        # Map AbacatePay status to our internal
+        if status == "COMPLETED" or event_type == "checkout.completed":
+            status = "PAID"
 
         return {
             "event_id": event_id,

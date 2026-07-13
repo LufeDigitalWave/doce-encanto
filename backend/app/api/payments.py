@@ -51,9 +51,15 @@ async def create_pix_charge(
     order.payment_provider = provider.name
     await session.commit()
 
+    # In real mode, copy_paste_code contains the checkout URL
+    checkout_url = None
+    if not get_settings().demo_mode and charge.copy_paste_code.startswith("http"):
+        checkout_url = charge.copy_paste_code
+
     return PaymentChargeOut(
         qr_code_base64=charge.qr_code_base64,
         copy_paste_code=charge.copy_paste_code,
+        checkout_url=checkout_url,
         expires_at=charge.expires_at,
         demo_mode=get_settings().demo_mode,
     )
