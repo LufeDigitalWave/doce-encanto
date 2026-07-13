@@ -14,9 +14,9 @@ export default function Header({ cartCount, onCartClick }: HeaderProps) {
         </Link>
 
         <nav className="hidden md:flex items-center gap-8">
-          <a href="#vitrine" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Cardápio</a>
-          <a href="#como-funciona" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Como funciona</a>
-          <a href="#faq" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Dúvidas</a>
+          <Link to="/#vitrine" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Cardápio</Link>
+          <Link to="/#como-funciona" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Como funciona</Link>
+          <Link to="/#faq" className="text-sm font-medium text-chocolate-600 hover:text-rosa-500 transition-colors">Dúvidas</Link>
           <Link to="/admin/login" className="text-sm font-medium text-chocolate-400 hover:text-rosa-500 transition-colors">
             Admin
           </Link>
