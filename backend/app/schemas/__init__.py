@@ -81,7 +81,17 @@ class CustomerIn(BaseModel):
     name: str = Field(min_length=2, max_length=120)
     email: EmailStr
     phone: str = Field(min_length=8, max_length=32)
-    cpf: str | None = Field(default=None, min_length=11, max_length=14)
+    cpf: str | None = Field(default=None, max_length=14)
+
+    @field_validator("cpf", mode="before")
+    @classmethod
+    def _empty_cpf_to_none(cls, v: str | None) -> str | None:
+        if not v or not v.strip():
+            return None
+        digits = "".join(ch for ch in v if ch.isdigit())
+        if len(digits) < 11:
+            raise ValueError("CPF deve ter 11 dígitos")
+        return digits
 
     @field_validator("phone")
     @classmethod
